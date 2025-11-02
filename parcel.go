@@ -2,6 +2,7 @@ package main
 
 import (
 	"database/sql"
+	"fmt"
 	"math/rand"
 )
 
@@ -79,7 +80,18 @@ func (s ParcelStore) SetStatus(number int, status string) error {
 func (s ParcelStore) SetAddress(number int, address string) error {
 	// реализуйте обновление адреса в таблице parcel
 	// менять адрес можно только если значение статуса registered
-	_, err := s.db.Exec("UPDATE parcel SET address = ? WHERE number = ?", address, number)
+	var status string
+	row := s.db.QueryRow("SELECT status FROM parcel WHERE number = ?", number)
+	err := row.Scan(&status)
+	if err != nil {
+		return err
+	}
+
+	if status != ParcelStatusRegistered {
+		return fmt.Errorf("scannot set address for parcel with status %s", status)
+	}
+
+	_, err = s.db.Exec("UPDATE parcel SET address = ? WHERE number = ?", address, number)
 	if err != nil {
 		return err
 	}
